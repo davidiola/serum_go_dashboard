@@ -41,6 +41,17 @@ func (c Client) RetrieveVolumeForMarket(marketIdentifier string) []api.VolumeDat
 	}
 }
 
+func (c Client) RetrieveOrderBookForMarket(marketIdentifier string) api.OrderBookData {
+	var orderbook api.OrderBook
+	body := c.GatherHTTPResponseBody(constants.ORDERBOOK + strings.ReplaceAll(marketIdentifier, "/", ""))
+	json.Unmarshal([]byte(body), &orderbook)
+	if orderbook.Success {
+		return orderbook.Data
+	} else {
+		return api.OrderBookData{}
+	}
+}
+
 func (c Client) GatherHTTPResponseBody(endpoint string) []byte {
 	resp, err := http.Get(c.BaseEndpoint + endpoint)
 	if err != nil {
