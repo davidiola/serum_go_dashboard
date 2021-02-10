@@ -26,6 +26,9 @@ func main() {
 		orderBookData[i] = c.RetrieveOrderBookForMarket(pair)
 	}
 
+	fmt.Println("Retrieving last 24h of recent trades...")
+	tradeData := c.RetrieveTradesPastDay()
+
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -57,8 +60,10 @@ func main() {
 		if err != nil {
 			return err
 		}
+
 		fmt.Fprintln(v)
 		fmt.Fprintln(v)
+
 		for i, _ := range pairs {
 			fmt.Fprintf(v, "%.4f", volData[i].VolumeUsd)
 			fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(volData[i].VolumeUsd, 'f', constants.NUM_DECIMALS, 64))))
@@ -82,11 +87,48 @@ func main() {
 
 		fmt.Fprintln(v)
 
+		spread := make([]float64, constants.NUM_PAIRS)
+
 		for i, _ := range pairs {
 			maxBid := utils.RetrieveMinOrMaxFromOrders(orderBookData[i].Bids, false)
 			minAsk := utils.RetrieveMinOrMaxFromOrders(orderBookData[i].Asks, true)
-			fmt.Fprintf(v, "%.4f", minAsk-maxBid)
-			fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(minAsk-maxBid, 'f', constants.NUM_DECIMALS, 64))))
+			spread[i] = minAsk - maxBid
+			fmt.Fprintf(v, "%.4f", spread[i])
+			fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(spread[i], 'f', constants.NUM_DECIMALS, 64))))
+		}
+
+		fmt.Fprintln(v)
+
+		for i, _ := range pairs {
+			minAsk := utils.RetrieveMinOrMaxFromOrders(orderBookData[i].Asks, true)
+			sprPercentage := (spread[i] / minAsk) * 100
+			fmt.Fprintf(v, "%.4f", sprPercentage)
+			fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(sprPercentage, 'f', constants.NUM_DECIMALS, 64))))
+		}
+
+		fmt.Fprintln(v)
+
+		pairToTradeMap := utils.RetrievePairToTradeMap(tradeData, pairs)
+		for _, pair := range pairs {
+			if trade, ok := pairToTradeMap[pair]; ok {
+				fmt.Fprintf(v, "%.4f", trade.Price)
+				fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(trade.Price, 'f', constants.NUM_DECIMALS, 64))))
+			} else {
+				fmt.Fprintf(v, "%.4f", 0.0000)
+				fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(0.0000, 'f', constants.NUM_DECIMALS, 64))))
+			}
+		}
+
+		fmt.Fprintln(v)
+
+		for _, pair := range pairs {
+			if trade, ok := pairToTradeMap[pair]; ok {
+				fmt.Fprintf(v, "%.4f", trade.Size)
+				fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(trade.Size, 'f', constants.NUM_DECIMALS, 64))))
+			} else {
+				fmt.Fprintf(v, "%.4f", 0.0000)
+				fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(0.0000, 'f', constants.NUM_DECIMALS, 64))))
+			}
 		}
 
 		return nil
@@ -110,11 +152,14 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprintln(v, " Max Bid")
 		fmt.Fprintln(v, " Min Ask")
 		fmt.Fprintln(v, " B/A Spread")
+		fmt.Fprintln(v, " Spread %")
+		fmt.Fprintln(v, " Last Fill (24h)")
+		fmt.Fprintln(v, " Last Fill Size")
 	}
-	if _, err := g.SetView("toprow", int(0.06*float32(maxX)), -1, maxX, maxY); err != nil && err != gocui.ErrUnknownView {
+	if _, err := g.SetView("toprow", int(0.09*float32(maxX)), -1, maxX, maxY); err != nil && err != gocui.ErrUnknownView {
 		return err
 	}
-	if _, err := g.SetView("middle", int(0.06*float32(maxX)), 2, maxX, maxY); err != nil && err != gocui.ErrUnknownView {
+	if _, err := g.SetView("middle", int(0.09*float32(maxX)), 2, maxX, maxY); err != nil && err != gocui.ErrUnknownView {
 		return err
 	}
 	return nil

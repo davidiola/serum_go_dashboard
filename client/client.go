@@ -52,6 +52,17 @@ func (c Client) RetrieveOrderBookForMarket(marketIdentifier string) api.OrderBoo
 	}
 }
 
+func (c Client) RetrieveTradesPastDay() []api.TradeData {
+	var trades api.Trades
+	body := c.GatherHTTPResponseBody(constants.PAST_TRADES_DAY)
+	json.Unmarshal([]byte(body), &trades)
+	if trades.Success {
+		return trades.Data
+	} else {
+		return []api.TradeData{api.TradeData{}}
+	}
+}
+
 func (c Client) GatherHTTPResponseBody(endpoint string) []byte {
 	resp, err := http.Get(c.BaseEndpoint + endpoint)
 	if err != nil {

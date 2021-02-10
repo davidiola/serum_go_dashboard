@@ -28,6 +28,22 @@ type OrderBookData struct {
 }
 
 type OrderBook struct {
-	Success bool
-	Data    OrderBookData
+	Success bool          `json:"success"`
+	Data    OrderBookData `json:"data"`
+}
+
+type Trades struct {
+	Success bool        `json:"success"`
+	Data    []TradeData `json:"data"`
+}
+
+type TradeData struct {
+	Market        string  `json:"market"`
+	Price         float64 `json:"price"`
+	Size          float64 `json:"size"`
+	Side          string  `json:"side"`
+	Time          string  `json:"time"`
+	OrderId       string  `json:"orderId"`
+	FeeCost       float64 `json:"feeCost"`
+	MarketAddress string  `json:"marketAddress"`
 }
