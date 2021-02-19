@@ -101,7 +101,12 @@ func main() {
 
 		for i, _ := range pairs {
 			minAsk := utils.RetrieveMinOrMaxFromOrders(orderBookData[i].Asks, true)
-			sprPercentage := (spread[i] / minAsk) * 100
+			var sprPercentage float64
+			if minAsk != 0 {
+				sprPercentage = (spread[i] / minAsk) * 100
+			} else {
+				sprPercentage = 100.0
+			}
 			fmt.Fprintf(v, "%.4f", sprPercentage)
 			fmt.Fprintf(v, strings.Repeat(" ", constants.NUM_PADDING-len(strconv.FormatFloat(sprPercentage, 'f', constants.NUM_DECIMALS, 64))))
 		}
